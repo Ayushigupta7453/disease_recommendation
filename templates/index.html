@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disease Prediction</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-image: url('https://med.stanford.edu/news/all-news/2015/06/precision-health-predicting-and-preventing-disease/_jcr_content/main/image.img.620.high.jpg/precision-health-stock.jpg');
+            background-size: cover;
+            background-position: center;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        
+        .container {
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            border: 2px solid black;
+            border-radius: 10px;
+            margin-left:800px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .symptom-select {
+            margin: 10px 0;
+        }
+        select {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background-color: #BBE2EC;
+            color:blue;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+            color: white;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            background-color: #f9f9f9;
+        }
+        .result h2 {
+            margin-top: 0;
+        }
+        @media only screen and (max-width: 768px) {
+            .container {
+                max-width: 80%; /* Adjust width for smaller screens */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Disease Prediction</h1>
+        <h4>Click on add symptom and you can add only upto 4 symptoms</h4>
+        <form id="predictionForm">
+            <div id="symptom-container"></div>
+            <button type="button" id="addSymptomButton">Add Symptom</button>
+            <button type="button" onclick="getPrediction()">Get Prediction</button>
+        </form>
+        <div class="result" id="result" style="display: none;">
+            <h2>Prediction Result</h2>
+            <p><strong>Disease:</strong> <span id="disease"></span></p>
+            <p><strong>Description:</strong> <span id="description"></span></p>
+            <p><strong>Precautions:</strong> <span id="precautions"></span></p>
+            <p><strong>Medications:</strong> <span id="medications"></span></p>
+            <p><strong>Diet:</strong> <span id="diet"></span></p>
+            <p><strong>Workout:</strong> <span id="workout"></span></p>
+        </div>
+    </div>
+
+    <script>
+        const symptomsDict = {
+            itching: 'Itching', skin_rash: 'Skin Rash', nodal_skin_eruptions: 'Nodal Skin Eruptions',
+            continuous_sneezing: 'Continuous Sneezing', shivering: 'Shivering', chills: 'Chills',
+            joint_pain: 'Joint Pain', stomach_pain: 'Stomach Pain', acidity: 'Acidity',
+            ulcers_on_tongue: 'Ulcers on Tongue', muscle_wasting: 'Muscle Wasting', vomiting: 'Vomiting',
+            burning_micturition: 'Burning Micturition', spotting_urination: 'Spotting Urination', fatigue: 'Fatigue'
+            // Add more symptoms as needed
+        };
+
+        document.getElementById('addSymptomButton').addEventListener('click', addSymptomDropdown);
+
+        function addSymptomDropdown() {
+            const symptomContainer = document.getElementById('symptom-container');
+            const currentDropdowns = symptomContainer.querySelectorAll('select').length;
+
+            if (currentDropdowns < 4) {
+                const symptomSelect = document.createElement('select');
+                symptomSelect.className = 'symptom-select';
+                symptomSelect.innerHTML = `<option value="" disabled selected>Select a symptom</option>`;
+                for (const [value, text] of Object.entries(symptomsDict)) {
+                    symptomSelect.innerHTML += `<option value="${value}">${text}</option>`;
+                }
+                symptomContainer.appendChild(symptomSelect);
+            } else {
+                alert('You can only select up to 4 symptoms.');
+            }
+        }
+
+        async function getPrediction() {
+            const symptomContainer = document.getElementById('symptom-container');
+            const selectedSymptoms = Array.from(symptomContainer.querySelectorAll('select'))
+                                          .map(select => select.value)
+                                          .filter(value => value !== "");
+
+            if (selectedSymptoms.length === 0) {
+                alert('Please select at least one symptom.');
+                return;
+            }
+
+            const response = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ symptoms: selectedSymptoms }),
+            });
+
+            const result = await response.json();
+
+            document.getElementById('disease').textContent = result.disease;
+            document.getElementById('description').textContent = result.description;
+            document.getElementById('precautions').textContent = result.precaution.join(', ');
+            document.getElementById('medications').textContent = result.medications.join(', ');
+            document.getElementById('diet').textContent = result.diet.join(', ');
+            document.getElementById('workout').textContent = result.workout.join(', ');
+
+            document.getElementById('result').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
